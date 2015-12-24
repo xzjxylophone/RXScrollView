@@ -10,17 +10,74 @@
 
 #import "RXLimitView.h"
 #import "RXInfiniteView.h"
+#import "RXCategoryHeader.h"
+#define k_Test_Offset   80
 
-@interface MainViewController ()<UITableViewDataSource, UITableViewDelegate, RXLimitViewDataSource, RXInfiniteViewDataSource>
-@property (nonatomic, strong) UILabel *limitTopLabel;
-@property (nonatomic, strong) RXLimitView *rxLimitView;
 
+typedef enum E_RX_ViewStatus {
+    kE_RX_ViewStatus_ShowTop,
+    kE_RX_ViewStatus_ShowTV,
+}E_RX_ViewStatus;
+
+@interface MainViewController ()<UITableViewDataSource, UITableViewDelegate, RXInfiniteViewDataSource, RXInfiniteViewDelegate, UIGestureRecognizerDelegate>
 @property (nonatomic, strong) UILabel *infiniteTopLabel;
 @property (nonatomic, strong) RXInfiniteView *rxInfiniteView;
+
+@property (nonatomic, strong) UIView *topView;
+
+@property (nonatomic, assign) E_RX_ViewStatus e_RX_ViewStatus;
+
+@property (nonatomic, assign) BOOL showTop; // 当前是否 显示top
+
+
+
 
 @end
 
 @implementation MainViewController
+
+- (void)lblAction:(id)sender
+{
+    
+}
+#pragma mark - UIScrollViewDelegate
+
+
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView
+{
+    CGFloat y = scrollView.contentOffset.y;
+    switch (self.e_RX_ViewStatus) {
+        case kE_RX_ViewStatus_ShowTV:
+        {
+            
+            self.topView.top = - (self.topView.height + y);
+            
+            [self.view bringSubviewToFront:self.topView];
+            [self.view bringSubviewToFront:self.infiniteTopLabel];
+        }
+            break;
+            
+        default:
+            break;
+    }
+}
+
+- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate
+{
+    CGFloat y = scrollView.contentOffset.y;
+    if (y < 0) {
+        CGFloat y1 = fabs(y);
+        if (y1 > 80) {
+            
+            self.e_RX_ViewStatus = kE_RX_ViewStatus_ShowTop;
+            self.topView.top = self.infiniteTopLabel.height;
+            self.rxInfiniteView.top = [UIScreen mainScreen].bounds.size.height - 64;
+            
+            [self.view bringSubviewToFront:self.topView];
+            
+        }
+    }
+}
 
 
 #pragma mark - Private
@@ -67,21 +124,21 @@
     NSInteger cur = [infiniteView.curData integerValue];
     return @(cur + 1);
 }
-#pragma mark - RXLimitViewDataSource
-- (NSInteger)numberOfPageInRXLimitView:(RXLimitView *)rxLimitView
+#pragma mark - RXInfiniteViewDelegate
+- (void)nextActionInRXInfiniteView:(RXInfiniteView *)infiniteView
 {
-    return 5;
+    [self addTopViewToRXView];
+}
+- (void)preActionInRXInfiniteView:(RXInfiniteView *)infiniteView
+{
+    [self addTopViewToRXView];
 }
 
-- (UIView *)rxLimitView:(RXLimitView *)rxLimitView viewForAtIndex:(NSInteger)index
+#pragma mark - AddTopViewToInfinite
+- (void)addTopViewToRXView
 {
-    UITableView *tableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 0, rxLimitView.frame.size.width, rxLimitView.frame.size.height)];
-    tableView.tag = index + 1000;
-    tableView.delegate = self;
-    tableView.dataSource = self;
-    return tableView;
+    [self.view addSubview:self.topView];
 }
-
 
 #pragma mark - UITableViewDataSource
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
@@ -99,43 +156,58 @@
     return cell;
 }
 
-
 #pragma mark - initialize UI And Data
 - (void)initializeUIAndData
 {
+    self.edgesForExtendedLayout = UIRectEdgeNone;
+
+    self.showTop = NO;
+    
     CGFloat width = [UIScreen mainScreen].bounds.size.width;
     CGFloat height = [UIScreen mainScreen].bounds.size.height;
     
     CGFloat topViewHeight = 30;
-    CGFloat svHeight = 200;
+
+    self.e_RX_ViewStatus = kE_RX_ViewStatus_ShowTV;
     
-    self.limitTopLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, width, topViewHeight)];
-    self.limitTopLabel.backgroundColor = [UIColor redColor];
-    self.limitTopLabel.text = @"有限的";
-    
-    
-    self.rxLimitView = [[RXLimitView alloc] initWithFrame:CGRectMake(0, topViewHeight, width, svHeight)];
-    self.rxLimitView.dataSource = self;
-    [self.rxLimitView reloadData];
-    
-    [self.view addSubview:self.limitTopLabel];
-    [self.view addSubview:self.rxLimitView];
-    
-    
-    CGFloat inTopViewY = topViewHeight + svHeight;
-    self.infiniteTopLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, inTopViewY, width, topViewHeight)];
+    self.infiniteTopLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, width, topViewHeight)];
     self.infiniteTopLabel.text = @"无限的";
     self.infiniteTopLabel.backgroundColor = [UIColor greenColor];
+    [self.infiniteTopLabel rx_addGestureRecognizerWithTarget:self action:@selector(lblAction:)];
     
-    CGFloat inHeight = height - topViewHeight * 2 - svHeight - 64;
-    CGFloat inY = inTopViewY + topViewHeight;
-    self.rxInfiniteView = [[RXInfiniteView alloc] initWithFrame:CGRectMake(0, inY, width, inHeight)];
+    
+    
+    CGFloat inHeight = height - topViewHeight  - 64;
+    self.rxInfiniteView = [[RXInfiniteView alloc] initWithFrame:CGRectMake(0, topViewHeight, width, inHeight)];
     self.rxInfiniteView.dataSource = self;
+    self.rxInfiniteView.delegate = self;
     self.rxInfiniteView.curData = @(100);
     [self.rxInfiniteView reloadData];
+    [self.view addSubview:self.rxInfiniteView];
+    
+    
+    
+    self.topView = [[UIView alloc] initWithFrame:CGRectMake(0, -inHeight + topViewHeight, width, inHeight)];
+    self.topView.backgroundColor = [UIColor redColor];
+    
+    
+    
+//    UITableView *tv = [[UITableView alloc] initWithFrame:CGRectMake(0, inY, width, inHeight) style:UITableViewStyleGrouped];
+//    
+//    tv.dataSource = self;
+//    tv.delegate = self;
+//    [self.view addSubview:tv];
+    
+    
+    
+    
+    
+    [self addTopViewToRXView];
+
     
     [self.view addSubview:self.infiniteTopLabel];
-    [self.view addSubview:self.rxInfiniteView];
+    
+    
     
     
     

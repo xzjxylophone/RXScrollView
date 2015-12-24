@@ -13,9 +13,9 @@
 @property (nonatomic, strong) UIScrollView *scrollView;
 
 
-@property (nonatomic, strong) UIView *preView;
-@property (nonatomic, strong) UIView *curView;
-@property (nonatomic, strong) UIView *nextView;
+@property (nonatomic, strong, readwrite) UIView *preView;
+@property (nonatomic, strong, readwrite) UIView *curView;
+@property (nonatomic, strong, readwrite) UIView *nextView;
 
 
 @end

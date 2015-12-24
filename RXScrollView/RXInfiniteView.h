@@ -29,6 +29,9 @@
 @property (nonatomic, strong) id curData;
 - (void)reloadData;
 
+@property (nonatomic, readonly) UIView *preView;
+@property (nonatomic, readonly) UIView *curView;
+@property (nonatomic, readonly) UIView *nextView;
 
 @end
 
