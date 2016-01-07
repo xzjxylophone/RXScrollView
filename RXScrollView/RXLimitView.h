@@ -13,6 +13,7 @@
 
 
 @interface RXLimitView : UIView
+@property (nonatomic, readonly) UIScrollView *scrollView;
 
 @property (nonatomic, weak) id<RXLimitViewDataSource> dataSource;
 

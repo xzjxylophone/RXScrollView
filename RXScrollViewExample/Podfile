@@ -1,4 +1,7 @@
 
 
 pod 'RXCategory'
+pod 'RXPaddingView'
+
+
 

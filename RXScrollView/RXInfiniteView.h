@@ -19,6 +19,9 @@
 
 @interface RXInfiniteView : UIView
 
+@property (nonatomic, readonly) UIScrollView *scrollView;
+
+
 @property (nonatomic, weak) id<RXInfiniteViewDataSource> dataSource;
 @property (nonatomic, weak) id<RXInfiniteViewDelegate> delegate;
 

@@ -11,6 +11,8 @@
 #import "RXLimitView.h"
 #import "RXInfiniteView.h"
 #import "RXCategoryHeader.h"
+#import "DayViewSource.h"
+#import "WeekViewSource.h"
 #define k_Test_Offset   80
 
 
@@ -19,13 +21,20 @@ typedef enum E_RX_ViewStatus {
     kE_RX_ViewStatus_ShowTV,
 }E_RX_ViewStatus;
 
-@interface MainViewController ()<UITableViewDataSource, UITableViewDelegate, RXInfiniteViewDataSource, RXInfiniteViewDelegate, UIGestureRecognizerDelegate>
+@interface MainViewController ()<DayViewSourceDelegate, WeekViewSourceDelegate>
 @property (nonatomic, strong) UILabel *infiniteTopLabel;
-@property (nonatomic, strong) RXInfiniteView *rxInfiniteView;
+@property (nonatomic, strong) RXInfiniteView *dayView;
 
-@property (nonatomic, strong) UIView *topView;
+
+
+@property (nonatomic, strong) RXInfiniteView *weekView;
+
+//@property (nonatomic, strong) UIView *topView;
 
 @property (nonatomic, assign) E_RX_ViewStatus e_RX_ViewStatus;
+
+@property (nonatomic, strong) DayViewSource *dayViewSource;
+@property (nonatomic, strong) WeekViewSource *weekViewSource;
 
 @property (nonatomic, assign) BOOL showTop; // 当前是否 显示top
 
@@ -40,19 +49,31 @@ typedef enum E_RX_ViewStatus {
 {
     
 }
-#pragma mark - UIScrollViewDelegate
+
+#pragma mark - WeekViewSourceDelegate
+- (UIView *)viewFromCur
+{
+    return self.dayView.curView;
+}
+
+#pragma mark - DayViewSourceDelegate
+- (void)actionInDayViewSource:(DayViewSource *)dvs
+{
+    [self addTopViewToRXView];
+}
 
 
-- (void)scrollViewDidScroll:(UIScrollView *)scrollView
+
+- (void)dayViewSource:(DayViewSource *)dvs scrollViewDidScroll:(UIScrollView *)scrollView
 {
     CGFloat y = scrollView.contentOffset.y;
     switch (self.e_RX_ViewStatus) {
         case kE_RX_ViewStatus_ShowTV:
         {
             
-            self.topView.top = - (self.topView.height + y);
+            self.weekView.top = - (self.weekView.height + y);
             
-            [self.view bringSubviewToFront:self.topView];
+            [self.view bringSubviewToFront:self.weekView];
             [self.view bringSubviewToFront:self.infiniteTopLabel];
         }
             break;
@@ -62,7 +83,7 @@ typedef enum E_RX_ViewStatus {
     }
 }
 
-- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate
+- (void)dayViewSource:(DayViewSource *)dvs scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate
 {
     CGFloat y = scrollView.contentOffset.y;
     if (y < 0) {
@@ -70,91 +91,24 @@ typedef enum E_RX_ViewStatus {
         if (y1 > 80) {
             
             self.e_RX_ViewStatus = kE_RX_ViewStatus_ShowTop;
-            self.topView.top = self.infiniteTopLabel.height;
-            self.rxInfiniteView.top = [UIScreen mainScreen].bounds.size.height - 64;
+            self.weekViewSource.isShow = YES;
+            self.weekView.top = self.infiniteTopLabel.height;
+            self.dayView.top = [UIScreen mainScreen].bounds.size.height - 64;
+            [self.weekView reloadData];
             
-            [self.view bringSubviewToFront:self.topView];
+            [self.view bringSubviewToFront:self.weekView];
             
         }
     }
 }
 
 
-#pragma mark - Private
-- (UIView *)viewWithInRXInfiniteView:(RXInfiniteView *)infiniteView data:(id)data reuseView:(UIView *)reuseView
-{
-    UITableView *tableView = nil;
-    if (reuseView == nil) {
-        
-        tableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 0, infiniteView.frame.size.width, infiniteView.frame.size.height)];
-        tableView.delegate = self;
-        tableView.dataSource = self;
-    } else {
-        tableView = (UITableView *)reuseView;
-    }
-    tableView.tag = [data integerValue] + 1000;
-    [tableView reloadData];
-    return tableView;
-}
-
-#pragma mark - RXInfiniteViewDataSource
-- (UIView *)curViewInRXInfiniteView:(RXInfiniteView *)infiniteView reuseView:(UIView *)reuseView
-{
-    id curData = infiniteView.curData;
-    return [self viewWithInRXInfiniteView:infiniteView data:curData reuseView:reuseView];
-}
-- (UIView *)preViewInRXInfiniteView:(RXInfiniteView *)infiniteView reuseView:(UIView *)reuseView
-{
-    id preData = [self preDataInRXInfiniteView:infiniteView];
-    return [self viewWithInRXInfiniteView:infiniteView data:preData reuseView:reuseView];
-}
-- (UIView *)nextViewInRXInfiniteView:(RXInfiniteView *)infiniteView reuseView:(UIView *)reuseView
-{
-    id nextData = [self nextDataInRXInfiniteView:infiniteView];
-    return [self viewWithInRXInfiniteView:infiniteView data:nextData reuseView:reuseView];
-}
-
-- (id)preDataInRXInfiniteView:(RXInfiniteView *)infiniteView
-{
-    NSInteger cur = [infiniteView.curData integerValue];
-    return @(cur - 1);
-}
-- (id)nextDataInRXInfiniteView:(RXInfiniteView *)infiniteView
-{
-    NSInteger cur = [infiniteView.curData integerValue];
-    return @(cur + 1);
-}
-#pragma mark - RXInfiniteViewDelegate
-- (void)nextActionInRXInfiniteView:(RXInfiniteView *)infiniteView
-{
-    [self addTopViewToRXView];
-}
-- (void)preActionInRXInfiniteView:(RXInfiniteView *)infiniteView
-{
-    [self addTopViewToRXView];
-}
-
 #pragma mark - AddTopViewToInfinite
 - (void)addTopViewToRXView
 {
-    [self.view addSubview:self.topView];
+    [self.view addSubview:self.weekView];
 }
 
-#pragma mark - UITableViewDataSource
-- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
-{
-    return 30;
-}
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    NSString *identify = @"klsjglksgj";
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identify];
-    if (cell == nil) {
-        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identify];
-    }
-    cell.textLabel.text = [NSString stringWithFormat:@"%zd", tableView.tag];
-    return cell;
-}
 
 #pragma mark - initialize UI And Data
 - (void)initializeUIAndData
@@ -176,30 +130,29 @@ typedef enum E_RX_ViewStatus {
     [self.infiniteTopLabel rx_addGestureRecognizerWithTarget:self action:@selector(lblAction:)];
     
     
+    self.dayViewSource = [[DayViewSource alloc] init];
+    self.dayViewSource.delegate = self;
+    
+    self.weekViewSource = [[WeekViewSource alloc] init];
+    self.weekViewSource.delegate = self;
+    self.weekViewSource.isShow = NO;
+    
     
     CGFloat inHeight = height - topViewHeight  - 64;
-    self.rxInfiniteView = [[RXInfiniteView alloc] initWithFrame:CGRectMake(0, topViewHeight, width, inHeight)];
-    self.rxInfiniteView.dataSource = self;
-    self.rxInfiniteView.delegate = self;
-    self.rxInfiniteView.curData = @(100);
-    [self.rxInfiniteView reloadData];
-    [self.view addSubview:self.rxInfiniteView];
+    self.dayView = [[RXInfiniteView alloc] initWithFrame:CGRectMake(0, topViewHeight, width, inHeight)];
+    self.dayView.dataSource = self.dayViewSource;
+    self.dayView.delegate = self.dayViewSource;
+    self.dayView.curData = @(100);
+    [self.dayView reloadData];
+    [self.view addSubview:self.dayView];
     
     
     
-    self.topView = [[UIView alloc] initWithFrame:CGRectMake(0, -inHeight + topViewHeight, width, inHeight)];
-    self.topView.backgroundColor = [UIColor redColor];
-    
-    
-    
-//    UITableView *tv = [[UITableView alloc] initWithFrame:CGRectMake(0, inY, width, inHeight) style:UITableViewStyleGrouped];
-//    
-//    tv.dataSource = self;
-//    tv.delegate = self;
-//    [self.view addSubview:tv];
-    
-    
-    
+    self.weekView = [[RXInfiniteView alloc] initWithFrame:CGRectMake(0, -inHeight + topViewHeight, width, inHeight)];
+    self.weekView.dataSource = self.weekViewSource;
+    self.weekView.delegate = self.weekViewSource;
+    self.weekView.curData = @(100);
+    [self.weekView reloadData];
     
     
     [self addTopViewToRXView];
