@@ -101,7 +101,8 @@
         UIView *view = [self.dataSource rxLimitView:self viewForAtIndex:i];
         CGRect frame = view.frame;
         frame.origin.x = i * width;
-        frame.origin.y = 0;
+        // 不能设置Y值
+//        frame.origin.y = 0;
         view.frame = frame;
         [self.scrollView addSubview:view];
     }

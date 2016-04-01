@@ -5,7 +5,7 @@
 
 Pod::Spec.new do |s|
   s.name     = "RXScrollView"
-  s.version  = "0.4"
+  s.version  = "0.5"
   s.license  = "MIT"
   s.summary  = "RXScrollView is a simple limit/infinite scrollView"
   s.homepage = "https://github.com/xzjxylophone/RXScrollView"

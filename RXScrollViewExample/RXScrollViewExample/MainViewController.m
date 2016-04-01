@@ -64,7 +64,7 @@ typedef enum E_RX_ViewStatus {
 - (UIView *)rxLimitView:(RXLimitView *)rxLimitView viewForAtIndex:(NSInteger)index
 {
     NSArray *ary = @[[UIColor redColor], [UIColor greenColor], [UIColor blueColor]];
-    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, 250)];
+    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(0, 10, [UIScreen mainScreen].bounds.size.width, 250)];
     label.text = [NSString stringWithFormat:@"第%zd页", index];
     label.textColor = [UIColor whiteColor];
     label.backgroundColor = ary[index];
