@@ -93,6 +93,10 @@
 #pragma mark - Public
 - (void)reloadData
 {
+    NSArray *views = self.scrollView.subviews;
+    for (UIView *view in views) {
+        [view removeFromSuperview];
+    }
     CGFloat width = self.frame.size.width;
     CGFloat height = self.frame.size.height;
     NSInteger count = [self.dataSource numberOfPageInRXLimitView:self];
